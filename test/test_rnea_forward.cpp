@@ -1,1 +1,5 @@
 /*改代码用于实现牛顿欧拉法的前向递推过程，将计算结果与手算结果以及Pinocchio结果进行对比*/
+#include <Eigen/Dense>
+#include <iostream>
+
+// 导入DH表，MDH

@@ -67,13 +67,20 @@ int main()
     Eigen::Vector3d d_omega_1 = a_1.angular(); 
     std::cout<<"d_Omega_1 = " << d_omega_1 << "\n";
 
-    // 计算 ^1 d_v_1
+    // 计算计算连杆坐标系原点线加速度 ^1 d_v_1
     pinocchio::Motion d_v_11 = pinocchio::getClassicalAcceleration(SR4C_model,SR4C_data,joi_1,pinocchio::LOCAL);
     Eigen::Vector3d d_v_1 = d_v_11.linear(); 
     std::cout<<"d_v_1 = " << d_v_1 << "\n";
 
     // 下面的部分都缺少对应的函数，因此选择直接代入公式计算结果
-    // 计算 ^1 v_dc1
+    // 计算连杆坐标系线 ^1 v_dc1
+    // ^i M_{i+1}
+    pinocchio::SE3 iMi1 = SR4C_data.oMi[0].actInv(SR4C_data.oMi[1]);
+    // ^i R_{i+1}
+    Eigen::Matrix3d iRi1 = iMi1.rotation();
+    // ^{i+1} R_i
+    Eigen::Matrix3d i1Ri = iRi1.transpose();
+    std::cout<<"d_v_1 = " << i1Ri << "\n";
 
     // 计算^1F_1
 
