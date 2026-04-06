@@ -14,4 +14,8 @@ std::vector<Eigen::Matrix4d> Com_MDH_Trans(
 
 std::vector<Eigen::Matrix3d> Ext_Rot(int n,const std::vector<Eigen::Matrix4d> & T);
 
+std::vector<Eigen::Vector3d> Ext_Pos(int n,const std::vector<Eigen::Matrix4d> & T);
+
+std::vector<Eigen::Matrix3d> Ext_Rot_trans(int n,const std::vector<Eigen::Matrix4d> & T);
+
 #endif

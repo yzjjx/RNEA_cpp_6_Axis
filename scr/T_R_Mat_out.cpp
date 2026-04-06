@@ -31,12 +31,34 @@ std::vector<Eigen::Matrix4d> Com_MDH_Trans(
 //该函数用于在齐次变换矩阵中返回旋转矩阵，输入T，返回Rot
 std::vector<Eigen::Matrix3d> Ext_Rot(int n,const std::vector<Eigen::Matrix4d> & T)
 {
-    std::vector<Eigen::Matrix3d> R(n) ;
+    std::vector<Eigen::Matrix3d> R(n);
     for(int i = 0;i<n;i++)
     {
         R[i] = T[i].block<3,3>(0,0);
     }
     return R;
+}
+
+//该函数用于在齐次变换矩阵中返回旋转矩阵的转置，输入T，返回Rot_trans
+std::vector<Eigen::Matrix3d> Ext_Rot_trans(int n,const std::vector<Eigen::Matrix4d> & T)
+{
+    std::vector<Eigen::Matrix3d> R_Tran(n);
+    for(int i = 0;i<n;i++)
+    {
+        R_Tran[i] = T[i].block<3,3>(0,0).transpose();
+    }
+    return R_Tran;
+}
+
+//该函数用于返回位置矩阵P
+std::vector<Eigen::Vector3d> Ext_Pos(int n,const std::vector<Eigen::Matrix4d> & T)
+{
+    std::vector<Eigen::Vector3d> P(n);
+    for(int i = 0;i<n;i++)
+    {
+        P[i] = T[i].block<3,1>(0,3);
+    }
+    return P;
 }
 
 // int main()
