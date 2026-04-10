@@ -68,8 +68,11 @@ int main()
     std::vector<Eigen::Matrix4d> T = Com_MDH_Trans(alpha, a, d, q);
     // 计算旋转矩阵
     std::vector<Eigen::Matrix3d> R= Ext_Rot_trans(n,T);
-    // 计算旋转矩阵
+    // 计算平移矩阵
     std::vector<Eigen::Vector3d> P= Ext_Pos(n,T);
+
+    // 计算内推所需旋转矩阵
+    std::vector<Eigen::Matrix3d> R_n= Ext_Rot(n,T);
 
     // 底座连杆角速度，连杆角速度计算
     std::vector<Eigen::Vector3d> omega;
@@ -114,6 +117,29 @@ int main()
         N[i] = Eigen::Vector3d::Zero();
     }
 
+    // 内推
+    // 连杆总力计算
+    std::vector<Eigen::Vector3d> f;
+    f.resize(n+1);
+    for(int i = 0; i < n+1; i++)
+    {
+        f[i] = Eigen::Vector3d::Zero();
+    }
+    // 连杆总力矩计算
+    std::vector<Eigen::Vector3d> n;
+    n.resize(n+1);
+    for(int i = 0; i < n+1; i++)
+    {
+        n[i] = Eigen::Vector3d::Zero();
+    }
+    // 连杆力矩计算
+    std::vector<Eigen::Vector3d> tau;
+    tau.resize(n+1);
+    for(int i = 0; i < n+1; i++)
+    {
+        tau[i] = Eigen::Vector3d::Zero();
+    }
+
     // 底座角速度
     omega[0] = Eigen::Vector3d::Zero();
     // 底座角加速度
@@ -121,7 +147,7 @@ int main()
     // 底座线加速度
     d_v[0] = Eigen::Vector3d(0.0, 0.0, -9.8);
 
-    // 主要计算循环
+    // 主要计算循环,RNEA外推计算
     for(int i = 0;i<n;i++)
     {
         // 连杆角速度
@@ -136,6 +162,18 @@ int main()
         F[i+1] = m[i]*d_v_c[i+1];
         // 连杆力矩
         N[i+1] = I[i]*d_omega[i+1]+omega[i+1].cross(I[i]*omega[i+1]);
+    }
+
+
+    // 主要计算循环，RNEA内推（未检查）
+    for(int i = n;i>0;i--)
+    {
+        // 计算连杆总力
+        f[i] = R_n[i]*f[i+1]+F[i];
+        // 计算连杆总力矩
+        n[i] = N[i]+R_n[i]*n[i+1]+P_c[i].cross(F[i])+P[i].cross(R_n[i]*f[i+1]);
+        // 计算关节力矩
+        tau[i] = n[i]*Z;
     }
     
 
