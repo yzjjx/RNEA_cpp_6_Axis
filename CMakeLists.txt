@@ -9,8 +9,10 @@ list(APPEND CMAKE_PREFIX_PATH "/opt/openrobots")
 find_package(pinocchio REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-add_executable(pinocchio_demo test/test_pinocchio_6axis.cpp
-    scr/T_R_Mat_out.cpp)
+add_executable(pinocchio_demo scr/test_main.cpp
+    scr/T_R_Mat_out.cpp
+    scr/SR4_tau_f.cpp
+    scr/SR4_RNEA_tau.cpp)
 
 target_link_libraries(pinocchio_demo PRIVATE
     pinocchio::pinocchio

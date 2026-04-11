@@ -1,15 +1,11 @@
-/*该代码用于实现牛顿欧拉法的前向递推过程，将计算结果与手算结果以及Pinocchio结果进行对比*/
-/*该代码在三自由度机器人验证正确*/
-#include <Eigen/Dense>
-#include <iostream>
+#include "SR4_RNEA_tau.h"
 #include "T_R_Mat_out.h"
 
-int main()
+std::vector<double> Com_tau(const int n,Eigen::Matrix<double,6,1> q,
+                            Eigen::Matrix<double,6,1> dq,
+                            Eigen::Matrix<double,6,1> ddq)
 {
     const Eigen::Vector3d Z(0, 0, 1);
-
-    // 输入关节数量
-    const int n = 6;
 
     // 输入各个连杆质心坐标向量，用于计算质心线加速度
     const Eigen::Vector3d P_c[n] = {
@@ -31,10 +27,15 @@ int main()
         Eigen::Vector3d(4.62815646042645e-05/0.633999997351584,
                         5.00861139672133e-05/0.633999997351584,
                         -0.0284368017495592/0.633999997351584)
-                    };
+    };
 
     // 输入各个连杆质量，用于计算力
-    const double m[n] = {3.16699999486378,3.89505775503759,1.55161965449885,1.8819999954753,1.34621855234916,0.633999997351584};
+    const double m[n] = {3.16699999486378,
+                         3.89505775503759,
+                         1.55161965449885,
+                         1.88199999547530,
+                         1.34621855234916,
+                         0.633999997351584};
 
     // 输入各个连杆的惯性张量矩阵，用于计算力矩
     const Eigen::Matrix3d I[n] = {
@@ -77,7 +78,7 @@ int main()
 
     // 在此编辑DH表，MDH
     // MDH 参数
-    Eigen::Matrix<double, n, 1> alpha;
+    Eigen::Matrix<double, 6, 1> alpha;
     alpha << 0.0,
             -M_PI / 2.0,
             M_PI,
@@ -85,7 +86,7 @@ int main()
             M_PI / 2.0,
             -M_PI / 2.0;
 
-    Eigen::Matrix<double, n, 1> a;
+    Eigen::Matrix<double, 6, 1> a;
     a << 0.0,
         0.0,
         0.403112,
@@ -93,25 +94,13 @@ int main()
         0.0,
         0.0;
 
-    Eigen::Matrix<double, n, 1> d;
+    Eigen::Matrix<double, 6, 1> d;
     d << 0.328,
         0.0,
         0.4,
         0.4,
         -0.136,
         0.1035;
-
-    // 输入关节角度（在实际计算中，关节角度需要接受外界未知量）
-    Eigen::Matrix<double, n, 1> q;
-    q << M_PI*30/180, M_PI*60/180 , M_PI*45/180,M_PI*20/180, M_PI*50/180 , M_PI*45/180;
-
-    // 输入关节角速度
-    Eigen::Matrix<double,n,1> dq;
-    dq << 1,2,3,4,5,6;
-
-    // 输入关节角加速度
-    Eigen::Matrix<double,n,1> ddq;
-    ddq << 0.01,0.05,0.1,0.2,0.4,0.05;
 
     // 计算齐次变换矩阵
     std::vector<Eigen::Matrix4d> T = Com_MDH_Trans(alpha, a, d, q);
@@ -220,35 +209,6 @@ int main()
         //关节输出力矩
         tau[i] = n_f[i].dot(Z);
     }
-    
 
-    // 输出结果
-    for (int i = 0; i < n; i++)
-    {
-        std::cout << "T[" << i << "] = \n" << T[i] << "\n\n";
-        std::cout << "R[" << i << "] = \n" << R[i] << "\n\n";
-        std::cout << "R_n[" << i << "] = \n" << R_n[i] << "\n\n";
-    }
-    for (int i = 0; i < n+1; i++)
-    {
-        std::cout << "omega[" << i << "] = \n" << omega[i] << "\n\n";
-        std::cout << "d_omega[" << i << "] = \n" << d_omega[i] << "\n\n";
-        std::cout << "d_v[" << i << "] = \n" << d_v[i] << "\n\n";
-        std::cout << "d_v_c[" << i << "] = \n" << d_v_c[i] << "\n\n";
-        std::cout << "F[" << i << "] = \n" << F[i] << "\n\n";
-        std::cout << "N[" << i << "] = \n" << N[i] << "\n\n";
-    }
-    // 内推结果
-    for (int i = 0; i < n+1; i++)
-    {
-        std::cout << "f[" << i << "] = \n" << f[i] << "\n\n";
-        std::cout << "n_f[" << i << "] = \n" << n_f[i] << "\n\n";
-    }
-    // 最终计算关节力矩结果
-    for (int i = 0; i < n+1; i++)
-    {
-        std::cout << "tau[" << i << "] = \n" << tau[i] << "\n\n";
-    }
-
-    return 0;
+    return tau;
 }
