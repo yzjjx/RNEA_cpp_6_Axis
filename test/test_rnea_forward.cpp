@@ -1,4 +1,5 @@
-/*改代码用于实现牛顿欧拉法的前向递推过程，将计算结果与手算结果以及Pinocchio结果进行对比*/
+/*该代码用于实现牛顿欧拉法的前向递推过程，将计算结果与手算结果以及Pinocchio结果进行对比*/
+/*该代码在三自由度机器人验证正确*/
 #include <Eigen/Dense>
 #include <iostream>
 #include "T_R_Mat_out.h"
@@ -126,29 +127,24 @@ int main()
         f[i] = Eigen::Vector3d::Zero();
     }
     // 连杆总力矩计算
-    std::vector<Eigen::Vector3d> n;
-    n.resize(n+1);
+    std::vector<Eigen::Vector3d> n_f;
+    n_f.resize(n+1);
     for(int i = 0; i < n+1; i++)
     {
-        n[i] = Eigen::Vector3d::Zero();
+        n_f[i] = Eigen::Vector3d::Zero();
     }
     // 连杆力矩计算
-    std::vector<Eigen::Vector3d> tau;
-    tau.resize(n+1);
-    for(int i = 0; i < n+1; i++)
-    {
-        tau[i] = Eigen::Vector3d::Zero();
-    }
+    std::vector<double> tau(n+1, 0.0);
 
     // 底座角速度
     omega[0] = Eigen::Vector3d::Zero();
     // 底座角加速度
     d_omega[0] = Eigen::Vector3d::Zero();
     // 底座线加速度
-    d_v[0] = Eigen::Vector3d(0.0, 0.0, -9.8);
+    d_v[0] = Eigen::Vector3d(0.0, 0.0, 9.8);
 
-    // 主要计算循环,RNEA外推计算
-    for(int i = 0;i<n;i++)
+    // 主要计算循环,RNEA外推计算，与pinocchio比较，外推结果全部正确
+    for(int i = 0;i < n;i++)
     {
         // 连杆角速度
         omega[i+1] = R[i]*omega[i]+dq[i]*Z;
@@ -165,15 +161,16 @@ int main()
     }
 
 
-    // 主要计算循环，RNEA内推（未检查）
-    for(int i = n;i>0;i--)
+    // 主要计算循环，RNEA内推
+    for (int i = n; i > 0 ; i--)
     {
-        // 计算连杆总力
-        f[i] = R_n[i]*f[i+1]+F[i];
-        // 计算连杆总力矩
-        n[i] = N[i]+R_n[i]*n[i+1]+P_c[i].cross(F[i])+P[i].cross(R_n[i]*f[i+1]);
-        // 计算关节力矩
-        tau[i] = n[i]*Z;
+        // 连杆总力
+        f[i] = R_n[i] * f[i + 1] + F[i];
+        // 连杆总力矩
+        n_f[i] =N[i]+ R_n[i] * n_f[i + 1]+ P_c[i-1].cross(F[i])
+                + P[i].cross(R_n[i] * f[i + 1]);
+        //关节输出力矩
+        tau[i] = n_f[i].dot(Z);
     }
     
 
@@ -182,6 +179,7 @@ int main()
     {
         std::cout << "T[" << i << "] = \n" << T[i] << "\n\n";
         std::cout << "R[" << i << "] = \n" << R[i] << "\n\n";
+        std::cout << "R_n[" << i << "] = \n" << R_n[i] << "\n\n";
     }
     for (int i = 0; i < n+1; i++)
     {
@@ -191,6 +189,17 @@ int main()
         std::cout << "d_v_c[" << i << "] = \n" << d_v_c[i] << "\n\n";
         std::cout << "F[" << i << "] = \n" << F[i] << "\n\n";
         std::cout << "N[" << i << "] = \n" << N[i] << "\n\n";
+    }
+    // 内推结果
+    for (int i = 0; i < n+1; i++)
+    {
+        std::cout << "f[" << i << "] = \n" << f[i] << "\n\n";
+        std::cout << "n_f[" << i << "] = \n" << n_f[i] << "\n\n";
+    }
+    // 最终计算关节力矩结果
+    for (int i = 0; i < n+1; i++)
+    {
+        std::cout << "tau[" << i << "] = \n" << tau[i] << "\n\n";
     }
 
     return 0;
