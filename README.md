@@ -40,4 +40,4 @@ data_in:输入的六轴文件，包括关节速度、角速度与角加速度
 
 
 最终计算结果与真实采集数据对比：
-![alt text](d0ac0a4a84cd3a7c4457bf6b62b4200c.png)
+![alt text](images/d0ac0a4a84cd3a7c4457bf6b62b4200c.png)
