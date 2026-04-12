@@ -1,123 +1,43 @@
 该代码为递归牛顿欧拉（Recursive Newton-Euler Algorithm(RNEA)）计算逆动力学的C++代码版本
-test_pinocchio_rnea.cpp:用来输出urdf文件的质量矩阵、惯量矩阵等等，以及计算前向牛顿欧拉
 
-omega[0] = 
-0
-0
-0
+代码文件说明：
+scr/SR4_RNEA_tau.cpp：用来计算RNEA动力学力矩，针对6轴ROKAE SR4
 
-d_omega[0] = 
-0
-0
-0
+scr/SR4_tau_f.cpp：用来计算关节摩擦力矩，针对6轴ROKAE SR4
 
-d_v[0] = 
-   0
-   0
--9.8
+scr/T_R_Mat_out.cpp：计算齐次变换矩阵与旋转矩阵
 
-d_v_c[0] = 
-0
-0
-0
+scr/total_tau.cpp：用RNEA力矩结果与摩擦力矩结果计算关节总力矩
 
-F[0] = 
-0
-0
-0
+scr/test_main_taufadd.cpp：用total_tau函数计算总力矩输出结果（AI）
 
-N[0] = 
-0
-0
-0
-//////计算结果
-omega[1] = 
-0
-0
-1
+scr/test_main.cpp：用来分别输出关节力矩与摩擦力矩（AI）
 
-d_omega[1] = 
-   0
-   0
-0.01
 
-d_v[1] = 
-   0
-   0
--9.8
+test文件夹：用来进行代码测试，有单一输出结果，也有没封装成函数的RNEA代码
 
-d_v_c[1] = 
--1.08992
-  0.0189
-    -9.8
+test/test_main.cpp：该测试代码用来测试scr的函数是否能在外部调用
 
-F[1] = 
--3.26976
-  0.0567
-   -29.4
+test/test_pinocchio_6axis.cpp：该测试代码用pinocchio验证六轴机器人动力学计算结果，不用urdf
 
-N[1] = 
-  0.00223652
--2.66356e-05
-  5.8774e-05
+test/test_pinocchio_rnea.cpp：该测试代码用pinocchio验证六轴机器人动力学计算结果，用urdf
 
-omega[2] = 
-0
-0
-3
+test/test_pinoccho_test.cpp：该测试代码用pinocchio验证三轴机器人动力学计算结果，不用urdf
 
-d_omega[2] = 
-   0
-   0
-0.06
+test/test_rnea_6axis.cpp：该测试代码用自己的RNEA进行六轴机器人动力学计算
 
-d_v[2] = 
--2.4567
-4.35513
-   -9.8
+test/test_rnea_add_fri.cpp：同样为自己写的RNEA六轴动力学计算，但是加入摩擦力矩结果
 
-d_v_c[2] = 
--3.98568
- 4.51833
-    -9.8
+test/test_rnea_forward.cpp：该测试代码为未封装成函数的RNEA计算代码
 
-F[2] = 
--15.9427
- 18.0733
-   -39.2
+test/test_rnea_fun.cpp：该测试代码用来测试封装的函数计算是否能输出正确结果
 
-N[2] = 
--0.00657289
-  -0.021633
- 0.00828839
 
-omega[3] = 
-0
-0
-6
+urdf_and_xml/xMateSR4C_gen.urdf：6轴ROKAE SR4机器人urdf文件，但是用来计算动力学并不准确
 
-d_omega[3] = 
-   0
-   0
-0.16
 
-d_v[3] = 
--61.873
-68.8806
-   -9.8
+data_in:输入的六轴文件，包括关节速度、角速度与角加速度
 
-d_v_c[3] = 
--61.853
-65.2804
-   -9.8
 
-F[3] = 
--309.265
- 326.402
-     -49
-
-N[3] = 
--0.0641056
- 0.0119457
-0.00323437
-//////////////外推结果全部正确
+最终计算结果与真实采集数据对比：
+![alt text](d0ac0a4a84cd3a7c4457bf6b62b4200c.png)
