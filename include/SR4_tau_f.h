@@ -7,4 +7,5 @@
 #include <iostream>//cin和cout所在库
 
 std::vector<double>  Com_tau_f(const int n,Eigen::Matrix<double,6,1> dq);
+
 #endif
