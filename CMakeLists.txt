@@ -9,11 +9,12 @@ list(APPEND CMAKE_PREFIX_PATH "/opt/openrobots")
 find_package(pinocchio REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-add_executable(pinocchio_demo scr/test_main_taufadd.cpp
+add_executable(pinocchio_demo test/test_RNEA_FPGA.cpp
     scr/T_R_Mat_out.cpp
     scr/SR4_tau_f.cpp
     scr/SR4_RNEA_tau.cpp
-    scr/total_tau.cpp)
+    scr/total_tau.cpp
+    scr/SR4_RNEA_FPGA.cpp)
 
 target_link_libraries(pinocchio_demo PRIVATE
     pinocchio::pinocchio

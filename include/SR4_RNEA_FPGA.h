@@ -1,3 +1,6 @@
+#ifndef SR4_RNEA_FPGA
+#define SR4_RNEA_FPGA
+
 /*该代码用于在FPGA进行综合*/
 // #include <ap_fixed.h>      // 定点数
 // #include <ap_int.h>        // 整数优化
@@ -173,69 +176,23 @@ void Com_MDH_Trans(
     const data_t  cosq[n],
     const data_t  cos_alpha[n],
     data_t T[n][16]
-)
-{
-    for(int i = 0;i<n;i++)
-    {
-         T[i][0] = cosq[i];                 T[i][1] = -sinq[i];                 T[i][2] = 0;                T[i][3] = a[i];
-         T[i][4] = sinq[i]*cos_alpha[i];    T[i][5] = cosq[i]*cos_alpha[i];     T[i][6] = -sin_alpha[i];    T[i][7] = -sin_alpha[i]*d[i];
-         T[i][8] = sinq[i]*sin_alpha[i];    T[i][9] = cosq[i]*sin_alpha[i];     T[i][10] = cos_alpha[i];    T[i][11] = cos_alpha[i]*d[i];
-         T[i][12] =0;                       T[i][13] = 0;                       T[i][14] = 0;               T[i][15] = 1;
-    }
-}
+);
 
 //该函数用于在齐次变换矩阵中返回旋转矩阵，输入T，返回Rot
-void Ext_Rot(const data_t T[n][16],data_t R[n][9])
-{
-    for(int i = 0;i<n;i++)
-    {
-        R[i][0] =  T[i][0];   R[i][1] = T[i][1];  R[i][2] = T[i][2];
-        R[i][3] =  T[i][4];   R[i][4] = T[i][5];  R[i][5] = T[i][6];
-        R[i][6] =  T[i][8];   R[i][7] = T[i][9];  R[i][8] = T[i][10];
-    };
-}
+void Ext_Rot(const data_t T[n][16],data_t R[n][9]);
 
 //该函数用于在齐次变换矩阵中返回旋转矩阵的转置，输入T，返回Rot_trans
-void Ext_Rot_trans(const data_t T[n][16],data_t R_Tran[n][9])
-{
-    for(int i = 0;i<n;i++)
-    {
-        R_Tran[i][0] =  T[i][0];   R_Tran[i][1] = T[i][4];  R_Tran[i][2] = T[i][8];
-        R_Tran[i][3] =  T[i][1];   R_Tran[i][4] = T[i][5];  R_Tran[i][5] = T[i][9];
-        R_Tran[i][6] =  T[i][2];   R_Tran[i][7] = T[i][6];  R_Tran[i][8] = T[i][10];
-    };
-}
+void Ext_Rot_trans(const data_t T[n][16],data_t R_Tran[n][9]);
 
 //该函数用于返回位置矩阵P
-void Ext_Pos(const data_t T[n][16],data_t P[n][3])
-{
-    for(int i = 0;i<n;i++)
-    {
-        P[i][0] =  T[i][3];  
-        P[i][3] =  T[i][7]; 
-        P[i][6] =  T[i][11];  
-    };
-}
-
+void Ext_Pos(const data_t T[n][16],data_t P[n][3]);
 // ====================== 静态数组的矩阵运算 ========================
 // 静态数组的矩阵乘法运算(9元素旋转矩阵*3元素向量)
 void mat_9x3_vec(
     const data_t A[9],
     const data_t x[3],
     data_t y[3]
-)
-{
-    for (int i = 0; i < 3; i++)
-    {
-        y[i] = 0.0;
-        for (int k = 0; k < 3; k++)
-        {
-            y[i] += A[i * 3 + k] * x[k];
-        }
-    }
-}
-
-
+);
 
 //======================== RNEA主要力矩计算 ========================
 // 主要计算循环,RNEA外推计算
@@ -247,68 +204,7 @@ void SR4_rnea_hls(
     const data_t cosq[n],
     data_t tau_out[n],
     data_t omega[n+1][3]
-)
-{
-    // 初始化
-    data_t T[n][16];
-    data_t R[n][9];
-    data_t R_T[n][9];
-    data_t P[n][3];
-
-    //计算上述结果，放到com_tau里面
-    // 计算齐次变换矩阵
-    Com_MDH_Trans(a,d,q,sinq,sin_alpha,cosq,cos_alpha,T);
-    // 计算旋转矩阵
-    Ext_Rot_trans(T,R_T);
-    // 计算平移矩阵
-    Ext_Pos(T,P);
-
-    // 计算内推所需旋转矩阵
-    Ext_Rot(T,R);
-
-    // 初始化结果矩阵
-    // data_t omega[n+1][3];   // 多开一行，omega[0]作为基座角速度
-    // 基座角速度 = 0
-    omega[0][0] = 0.0;
-    omega[0][1] = 0.0;
-    omega[0][2] = 0.0;
-
-    for(int i = 0;i < n;i++)
-    {
-
-        data_t tmp[3];
-        // tmp = R_T[i] * omega[i]
-        mat_9x3_vec(R_T[i], omega[i], tmp);
-        // omega[i+1] = tmp + Z * dq[i]
-        omega[i+1][0] = tmp[0];
-        omega[i+1][1] = tmp[1];
-        omega[i+1][2] = tmp[2] + dq[i];
-        // 连杆角速度
-        // omega[i+1][3] = R[i]*omega[i]+dq[i]*Z;
-        // // 连杆角加速度
-        // d_omega[i+1] = R[i]*d_omega[i] + (R[i]*omega[i]).cross(dq[i]*Z)+ddq[i]*Z;
-        // // 线加速度
-        // d_v[i+1] = R[i]*(d_omega[i].cross(P[i])+omega[i].cross(omega[i].cross(P[i]))+d_v[i]);
-        // // 质心线加速度
-        // d_v_c[i+1] = d_omega[i+1].cross(P_c[i])+omega[i+1].cross(omega[i+1].cross(P_c[i]))+d_v[i+1];
-        // // 连杆力
-        // F[i+1] = m[i]*d_v_c[i+1];
-        // // 连杆力矩
-        // N[i+1] = I[i]*d_omega[i+1]+omega[i+1].cross(I[i]*omega[i+1]);
-    }
-
-    // // 主要计算循环，RNEA内推
-    // for (int i = n; i > 0 ; i--)
-    // {
-    //     // 连杆总力
-    //     f[i] = R_n[i] * f[i + 1] + F[i];
-    //     // 连杆总力矩
-    //     n_f[i] =N[i]+ R_n[i] * n_f[i + 1]+ P_c[i-1].cross(F[i])
-    //             + P[i].cross(R_n[i] * f[i + 1]);
-    //     //关节输出力矩
-    //     tau[i] = n_f[i].dot(Z);
-    // }
-}
+);
 
 
 // //======================== RNEA摩擦力计算 ========================
@@ -326,3 +222,6 @@ void SR4_rnea_hls(
 //     }
 //     return tau_f;
 // }
+
+
+#endif
