@@ -1,8 +1,6 @@
 #include <iostream>
 #include <cmath>
 #include <SR4_RNEA_FPGA.h>
-// 假设你的 SR4_rnea_hls 和相关常量、函数都在同一个文件里
-// 如果分成头文件和源文件，就 include 对应头文件
 
 int main()
 {
