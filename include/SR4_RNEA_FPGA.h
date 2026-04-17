@@ -202,8 +202,15 @@ void SR4_rnea_hls(
     const data_t ddq[n],
     const data_t sinq[n],
     const data_t cosq[n],
-    data_t tau_out[n],
-    data_t omega[n+1][3]
+    data_t omega[n+1][3],
+    data_t d_omega[n+1][3],
+    data_t d_v[n+1][3],
+    data_t d_v_c[n+1][3],
+    data_t F[n+1][3],
+    data_t N[n+1][3],
+    data_t f[n+1][3],
+    data_t n_f[n+1][3],
+    data_t tau[n+1]
 );
 
 

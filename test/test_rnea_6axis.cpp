@@ -232,23 +232,23 @@ int main()
     for (int i = 0; i < n+1; i++)
     {
         std::cout << "omega[" << i << "] = \n" << omega[i] << "\n\n";
-        // std::cout << "d_omega[" << i << "] = \n" << d_omega[i] << "\n\n";
-        // std::cout << "d_v[" << i << "] = \n" << d_v[i] << "\n\n";
-        // std::cout << "d_v_c[" << i << "] = \n" << d_v_c[i] << "\n\n";
-        // std::cout << "F[" << i << "] = \n" << F[i] << "\n\n";
-        // std::cout << "N[" << i << "] = \n" << N[i] << "\n\n";
+        std::cout << "d_omega[" << i << "] = \n" << d_omega[i] << "\n\n";
+        std::cout << "d_v[" << i << "] = \n" << d_v[i] << "\n\n";
+        std::cout << "d_v_c[" << i << "] = \n" << d_v_c[i] << "\n\n";
+        std::cout << "F[" << i << "] = \n" << F[i] << "\n\n";
+        std::cout << "N[" << i << "] = \n" << N[i] << "\n\n";
     }
     // 内推结果
-    // for (int i = 0; i < n+1; i++)
-    // {
-    //     std::cout << "f[" << i << "] = \n" << f[i] << "\n\n";
-    //     std::cout << "n_f[" << i << "] = \n" << n_f[i] << "\n\n";
-    // }
-    // // 最终计算关节力矩结果
-    // for (int i = 0; i < n+1; i++)
-    // {
-    //     std::cout << "tau[" << i << "] = \n" << tau[i] << "\n\n";
-    // }
+    for (int i = 0; i < n+1; i++)
+    {
+        std::cout << "f[" << i << "] = \n" << f[i] << "\n\n";
+        std::cout << "n_f[" << i << "] = \n" << n_f[i] << "\n\n";
+    }
+    // 最终计算关节力矩结果
+    for (int i = 0; i < n+1; i++)
+    {
+        std::cout << "tau[" << i << "] = \n" << tau[i] << "\n\n";
+    }
 
     return 0;
 }

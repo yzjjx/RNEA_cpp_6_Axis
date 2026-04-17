@@ -32,11 +32,18 @@ int main()
     }
 
     // 输出量
-    data_t tau_out[n];
     data_t omega_out[n+1][3];
+    data_t d_omega_out[n+1][3];
+    data_t d_v_out[n+1][3];
+    data_t d_v_c_out[n+1][3];
+    data_t F_out[n+1][3];
+    data_t N_out[n+1][3];
+    data_t f_out[n+2][3];
+    data_t n_f_out[n+2][3];
+    data_t tau_out[n+2];
 
     // 调用
-    SR4_rnea_hls(q, dq, ddq, sinq, cosq, tau_out, omega_out);
+    SR4_rnea_hls(q, dq, ddq, sinq, cosq, omega_out,d_omega_out,d_v_out,d_v_c_out,F_out,N_out,f_out,n_f_out,tau_out);
 
     // 打印基座和各连杆角速度
     std::cout << "=========== omega ===========" << std::endl;
@@ -46,6 +53,69 @@ int main()
                   << omega_out[i][0] << ", "
                   << omega_out[i][1] << ", "
                   << omega_out[i][2] << " ]" << std::endl;
+    }
+    // 打印基座和各连杆角速度
+    std::cout << "=========== d_omega ===========" << std::endl;
+    for (int i = 0; i <= n; i++)
+    {
+        std::cout << "d_omega[" << i << "] = [ "
+                  << d_omega_out[i][0] << ", "
+                  << d_omega_out[i][1] << ", "
+                  << d_omega_out[i][2] << " ]" << std::endl;
+    }
+    std::cout << "=========== d_v ===========" << std::endl;
+    for (int i = 0; i <= n; i++)
+    {
+        std::cout << "d_v[" << i << "] = [ "
+                  << d_v_out[i][0] << ", "
+                  << d_v_out[i][1] << ", "
+                  << d_v_out[i][2] << " ]" << std::endl;
+    }
+    std::cout << "=========== d_v_c ===========" << std::endl;
+    for (int i = 0; i <= n; i++)
+    {
+        std::cout << "d_v_c_out[" << i << "] = [ "
+                  << d_v_c_out[i][0] << ", "
+                  << d_v_c_out[i][1] << ", "
+                  << d_v_c_out[i][2] << " ]" << std::endl;
+    }
+    std::cout << "=========== F ===========" << std::endl;
+    for (int i = 0; i <= n; i++)
+    {
+        std::cout << "F_OUT[" << i << "] = [ "
+                  << F_out[i][0] << ", "
+                  << F_out[i][1] << ", "
+                  << F_out[i][2] << " ]" << std::endl;
+    }
+    std::cout << "=========== N ===========" << std::endl;
+    for (int i = 0; i <= n; i++)
+    {
+        std::cout << "N_OUT[" << i << "] = [ "
+                  << N_out[i][0] << ", "
+                  << N_out[i][1] << ", "
+                  << N_out[i][2] << " ]" << std::endl;
+    }
+    std::cout << "=========== f ===========" << std::endl;
+    for (int i = 0; i <= n; i++)
+    {
+        std::cout << "f_out[" << i << "] = [ "
+                  << f_out[i][0] << ", "
+                  << f_out[i][1] << ", "
+                  << f_out[i][2] << " ]" << std::endl;
+    }
+    std::cout << "=========== n_f ===========" << std::endl;
+    for (int i = 0; i <= n; i++)
+    {
+        std::cout << "n_f_out[" << i << "] = [ "
+                  << n_f_out[i][0] << ", "
+                  << n_f_out[i][1] << ", "
+                  << n_f_out[i][2] << " ]" << std::endl;
+    }
+    std::cout << "=========== tau ===========" << std::endl;
+    for (int i = 0; i <= n; i++)
+    {
+        std::cout << "tau_out[" << i << "] = [ "
+                  << tau_out[i] << " ]" << std::endl;
     }
 
     return 0;

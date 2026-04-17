@@ -185,7 +185,7 @@ void Com_MDH_Trans(
 }
 
 //该函数用于在齐次变换矩阵中返回旋转矩阵，输入T，返回Rot
-void Ext_Rot(const data_t T[n][16],data_t R[n][9])
+void Ext_Rot(const data_t T[n][16],data_t R[n+1][9])
 {
     for(int i = 0;i<n;i++)
     {
@@ -193,7 +193,13 @@ void Ext_Rot(const data_t T[n][16],data_t R[n][9])
         R[i][3] =  T[i][4];   R[i][4] = T[i][5];  R[i][5] = T[i][6];
         R[i][6] =  T[i][8];   R[i][7] = T[i][9];  R[i][8] = T[i][10];
     };
+    // 为了防止内推动越界
+    R[n][0] =  0;   R[n][1] = 0;  R[n][2] = 0;
+    R[n][3] =  0;   R[n][4] = 0;  R[n][5] = 0;
+    R[n][6] =  0;   R[n][7] = 0;  R[n][8] = 0;
 }
+
+
 
 //该函数用于在齐次变换矩阵中返回旋转矩阵的转置，输入T，返回Rot_trans
 void Ext_Rot_trans(const data_t T[n][16],data_t R_Tran[n][9])
@@ -207,14 +213,18 @@ void Ext_Rot_trans(const data_t T[n][16],data_t R_Tran[n][9])
 }
 
 //该函数用于返回位置矩阵P
-void Ext_Pos(const data_t T[n][16],data_t P[n][3])
+void Ext_Pos(const data_t T[n][16],data_t P[n+1][3])
 {
     for(int i = 0;i<n;i++)
     {
         P[i][0] =  T[i][3];  
-        P[i][3] =  T[i][7]; 
-        P[i][6] =  T[i][11];  
+        P[i][1] =  T[i][7]; 
+        P[i][2] =  T[i][11];  
     };
+    //防止越界
+    P[n][0] =  0;  
+    P[n][1] =  0; 
+    P[n][2] =  0;  
 }
 
 // ====================== 静态数组的矩阵运算 ========================
@@ -234,7 +244,17 @@ void mat_9x3_vec(
         }
     }
 }
-
+// 叉乘计算
+void cross_3x1(
+    const data_t a[3],
+    const data_t b[3],
+    data_t c[3]
+)
+{
+    c[0] = a[1] * b[2] - a[2] * b[1];
+    c[1] = a[2] * b[0] - a[0] * b[2];
+    c[2] = a[0] * b[1] - a[1] * b[0];
+}
 
 
 //======================== RNEA主要力矩计算 ========================
@@ -245,24 +265,29 @@ void SR4_rnea_hls(
     const data_t ddq[n],
     const data_t sinq[n],
     const data_t cosq[n],
-    data_t tau_out[n],
-    data_t omega[n+1][3]
+    data_t omega[n+1][3],
+    data_t d_omega[n+1][3],
+    data_t d_v[n+1][3],
+    data_t d_v_c[n+1][3],
+    data_t F[n+1][3],
+    data_t N[n+1][3],
+    data_t f[n+2][3],
+    data_t n_f[n+2][3],
+    data_t tau[n+2]
 )
 {
     // 初始化
     data_t T[n][16];
-    data_t R[n][9];
+    data_t R[n+1][9];
     data_t R_T[n][9];
-    data_t P[n][3];
+    data_t P[n+1][3];
 
-    //计算上述结果，放到com_tau里面
     // 计算齐次变换矩阵
     Com_MDH_Trans(a,d,q,sinq,sin_alpha,cosq,cos_alpha,T);
     // 计算旋转矩阵
     Ext_Rot_trans(T,R_T);
     // 计算平移矩阵
     Ext_Pos(T,P);
-
     // 计算内推所需旋转矩阵
     Ext_Rot(T,R);
 
@@ -272,10 +297,43 @@ void SR4_rnea_hls(
     omega[0][0] = 0.0;
     omega[0][1] = 0.0;
     omega[0][2] = 0.0;
+    // 基座角加速度为0
+    d_omega[0][0] = 0.0;
+    d_omega[0][1] = 0.0;
+    d_omega[0][2] = 0.0;
+    // 基座线加速度为0
+    d_v[0][0] = 0.0;
+    d_v[0][1] = 0.0;
+    d_v[0][2] = 9.8;
+    // 质心线加速度为0
+    d_v_c[0][0] = 0.0;
+    d_v_c[0][1] = 0.0;
+    d_v_c[0][2] = 0.0;
+    // 连杆力为0
+    F[0][0] = 0.0;
+    F[0][1] = 0.0;
+    F[0][2] = 0.0;
+    // 连杆力矩为0
+    N[0][0] = 0.0;
+    N[0][1] = 0.0;
+    N[0][2] = 0.0;
+    // //    data_t f[n+1][3],
+    // data_t n_f[n+1][3],
+    // data_t tau[n+1][3]
+    f[n+1][0] = 0.0;
+    f[n+1][1] = 0.0;
+    f[n+1][2] = 0.0;
+
+    n_f[n+1][0] = 0.0;
+    n_f[n+1][1] = 0.0;
+    n_f[n+1][2] = 0.0;
+
+    tau[n+1] = 0.0;
+
 
     for(int i = 0;i < n;i++)
     {
-
+        // 连杆角速度计算
         data_t tmp[3];
         // tmp = R_T[i] * omega[i]
         mat_9x3_vec(R_T[i], omega[i], tmp);
@@ -283,6 +341,78 @@ void SR4_rnea_hls(
         omega[i+1][0] = tmp[0];
         omega[i+1][1] = tmp[1];
         omega[i+1][2] = tmp[2] + dq[i];
+
+        // 连杆角加速度计算
+        data_t d_omega_tmp[3];
+        data_t d_omega_2[3];
+
+        mat_9x3_vec(R_T[i],d_omega[i],d_omega_tmp);
+        d_omega_2[0] = 0;
+        d_omega_2[1] = 0;
+        d_omega_2[2] = dq[i];
+
+        data_t cross_1[3];
+        cross_3x1(tmp,d_omega_2,cross_1);
+
+        d_omega[i+1][0] = d_omega_tmp[0]+cross_1[0];
+        d_omega[i+1][1] = d_omega_tmp[1]+cross_1[1];
+        d_omega[i+1][2] = d_omega_tmp[2] +cross_1[2]+ddq[i];
+
+        // 线加速度计算
+        // d_v[i+1] = R[i]*(d_omega[i].cross(P[i])+omega[i].cross(omega[i].cross(P[i]))+d_v[i]);
+        //cross_dv_1 = d_omega[i].cross(P[i])
+        data_t cross_dv_1[3];
+        cross_3x1(d_omega[i],P[i],cross_dv_1);
+        //cross_dv_2 = omega[i].cross(P[i])
+        data_t cross_dv_2[3];
+        cross_3x1(omega[i],P[i],cross_dv_2);
+        //cross_dv_3 = omega[i].cross(omega[i].cross(P[i]))
+        data_t cross_dv_3[3];
+        cross_3x1(omega[i],cross_dv_2,cross_dv_3);
+        // add_dv = d_omega[i].cross(P[i])+omega[i].cross(omega[i].cross(P[i]))+d_v[i]
+        data_t add_dv[3];
+        add_dv[0] = cross_dv_1[0]+cross_dv_3[0]+d_v[i][0];
+        add_dv[1] = cross_dv_1[1]+cross_dv_3[1]+d_v[i][1];
+        add_dv[2] = cross_dv_1[2]+cross_dv_3[2]+d_v[i][2];
+        // 最终结果计算
+        mat_9x3_vec(R_T[i],add_dv,d_v[i+1]);
+
+        // 质心线加速度
+        // cross_dvc_1 = d_omega[i+1].cross(P_c[i])
+        data_t cross_dvc_1[3];
+        cross_3x1(d_omega[i+1],P_c[i],cross_dvc_1);
+        //cross_dvc_2 = omega[i+1].cross(P_c[i])
+        data_t cross_dvc_2[3];
+        cross_3x1(omega[i+1],P_c[i],cross_dvc_2);
+        // cross_dvc_3 = omega[i+1].cross(omega[i+1].cross(P_c[i]))
+        data_t cross_dvc_3[3];
+        cross_3x1(omega[i+1],cross_dvc_2,cross_dvc_3);
+        // d_v_c
+        d_v_c[i+1][0] = cross_dvc_1[0]+cross_dvc_3[0]+d_v[i+1][0];
+        d_v_c[i+1][1] = cross_dvc_1[1]+cross_dvc_3[1]+d_v[i+1][1];
+        d_v_c[i+1][2] = cross_dvc_1[2]+cross_dvc_3[2]+d_v[i+1][2];
+
+        // 连杆力
+        F[i+1][0]=m[i]*d_v_c[i+1][0];
+        F[i+1][1]=m[i]*d_v_c[i+1][1];
+        F[i+1][2]=m[i]*d_v_c[i+1][2];
+
+        //连杆力矩
+        // N[i+1] = I[i]*d_omega[i+1]+omega[i+1].cross(I[i]*omega[i+1]);
+        data_t mat_1[3];
+        mat_9x3_vec(I[i],d_omega[i+1],mat_1);
+        //mat_2 = I[i]*omega[i+1]
+        data_t mat_2[3];
+        mat_9x3_vec(I[i],omega[i+1],mat_2);
+        //cross_N_1 = omega[i+1].cross(I[i]*omega[i+1])
+        data_t cross_N_1[3];
+        cross_3x1(omega[i+1],mat_2,cross_N_1);
+        //N
+        N[i+1][0] = mat_1[0]+cross_N_1[0];
+        N[i+1][1] = mat_1[1]+cross_N_1[1];
+        N[i+1][2] = mat_1[2]+cross_N_1[2];
+
+
         // 连杆角速度
         // omega[i+1][3] = R[i]*omega[i]+dq[i]*Z;
         // // 连杆角加速度
@@ -297,17 +427,43 @@ void SR4_rnea_hls(
         // N[i+1] = I[i]*d_omega[i+1]+omega[i+1].cross(I[i]*omega[i+1]);
     }
 
-    // // 主要计算循环，RNEA内推
-    // for (int i = n; i > 0 ; i--)
-    // {
-    //     // 连杆总力
-    //     f[i] = R_n[i] * f[i + 1] + F[i];
-    //     // 连杆总力矩
-    //     n_f[i] =N[i]+ R_n[i] * n_f[i + 1]+ P_c[i-1].cross(F[i])
-    //             + P[i].cross(R_n[i] * f[i + 1]);
-    //     //关节输出力矩
-    //     tau[i] = n_f[i].dot(Z);
-    // }
+    // 主要计算循环，RNEA内推
+    for (int i = n; i > 0 ; i--)
+    {
+        // 连杆总力
+        data_t mat_f_1[3];
+        mat_9x3_vec(R[i],f[i+1],mat_f_1);
+        f[i][0] = mat_f_1[0]+F[i][0];
+        f[i][1] = mat_f_1[1]+F[i][1];
+        f[i][2] = mat_f_1[2]+F[i][2];
+
+        // 连杆总力矩
+        //mat_n_f_1 = R_n[i] * n_f[i + 1]
+        data_t mat_n_f_1[3];
+        mat_9x3_vec(R[i],n_f[i+1],mat_n_f_1);
+        //cross_n_f_1 = P_c[i-1].cross(F[i])
+        data_t cross_n_f_1[3];
+        cross_3x1(P_c[i-1],F[i],cross_n_f_1);
+        //cross_n_f_2 = P[i].cross(R_n[i] * f[i + 1]);
+        data_t cross_n_f_2[3];
+        cross_3x1(P[i],mat_f_1,cross_n_f_2);
+        //n_f
+        n_f[i][0] = N[i][0]+mat_n_f_1[0]+cross_n_f_1[0]+cross_n_f_2[0];
+        n_f[i][1] = N[i][1]+mat_n_f_1[1]+cross_n_f_1[1]+cross_n_f_2[1];
+        n_f[i][2] = N[i][2]+mat_n_f_1[2]+cross_n_f_1[2]+cross_n_f_2[2];
+
+        // 关节力矩
+        tau[i] = n_f[i][2];
+
+
+        // // 连杆总力
+        // f[i] = R_n[i] * f[i + 1] + F[i];
+        // // 连杆总力矩
+        // n_f[i] =N[i]+ R_n[i] * n_f[i + 1]+ P_c[i-1].cross(F[i])
+        //         + P[i].cross(R_n[i] * f[i + 1]);
+        // //关节输出力矩
+        // tau[i] = n_f[i].dot(Z);
+    }
 }
 
 
