@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <chrono>
 #include "SR4_TAU_hls.h"
 
 int main()
@@ -32,8 +33,18 @@ int main()
     // 输出总力矩 tau1~tau6
     data_t tau_out[DOF];
 
+    // 开始计时
+    auto start = std::chrono::high_resolution_clock::now();
+
     // 调用 HLS 顶层函数
     total_tau_hls(q, dq, ddq, sinq, cosq, tau_out);
+
+    // 结束计时
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // 计算耗时
+    auto duration_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
     // 输出结果
     std::cout << "=========== tau_out ===========" << std::endl;
@@ -41,6 +52,10 @@ int main()
     {
         std::cout << "tau_out[" << i << "] = " << tau_out[i] << std::endl;
     }
+
+    std::cout << "=========== time ===========" << std::endl;
+    std::cout << "计算时间: " << duration_ns << " ns" << std::endl;
+    std::cout << "计算时间: " << duration_us << " us" << std::endl;
 
     return 0;
 }

@@ -1,9 +1,9 @@
 #include "SR4_RNEA_tau.h"
 #include "T_R_Mat_out.h"
 
-std::vector<double> Com_tau(const int n,Eigen::Matrix<double,6,1> q,
-                            Eigen::Matrix<double,6,1> dq,
-                            Eigen::Matrix<double,6,1> ddq)
+std::vector<double> Com_tau(const int n,const Eigen::Matrix<double,6,1>& q,
+                            const Eigen::Matrix<double,6,1>& dq,
+                            const Eigen::Matrix<double,6,1>& ddq)
 {
     const Eigen::Vector3d Z(0, 0, 1);
 

@@ -11,6 +11,8 @@
 #include <fstream>
 #include <vector>
 
+#include <chrono>
+
 int main()
 {
     using namespace pinocchio;
@@ -51,8 +53,18 @@ int main()
     v[0] = 1.2;
     a[0] = 0.8;
 
+    // 开始计时
+    auto start = std::chrono::high_resolution_clock::now();
     // 前向运动学
     pinocchio::forwardKinematics(SR4C_model,SR4C_data,q,v,a);
+
+    // 结束计时
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // 计算耗时
+    auto duration_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
 
     //取第一个关节
     pinocchio::JointIndex joi_1 = SR4C_model.getJointId("xmate_joint_1");
@@ -83,7 +95,9 @@ int main()
     std::cout<<"d_v_1 = " << i1Ri << "\n";
 
     // 计算^1F_1
-
+    std::cout << "=========== time ===========" << std::endl;
+    std::cout << "计算时间: " << duration_ns << " ns" << std::endl;
+    std::cout << "计算时间: " << duration_us << " us" << std::endl;
     // 计算^1N_1
 
     return 0;

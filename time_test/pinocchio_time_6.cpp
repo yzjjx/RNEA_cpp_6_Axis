@@ -11,7 +11,6 @@
 #include <iomanip>
 #include <cmath>
 #include <string>
-
 #include <chrono>
 
 using namespace pinocchio;
@@ -50,12 +49,6 @@ static Matrix4d TransZ4(double d)
 
 // -----------------------------
 // MDH 固定安装位姿
-//
-// 这里采用：RotX(alpha) * TransX(a) * TransZ(d)
-// 关节变量 q 由 JointModelRZ() 提供
-//
-// 如果你自己的 Com_MDH_Trans() 顺序不同，
-// 就只需要改这个函数。
 // -----------------------------
 static SE3 mdhFixedPlacement(double alpha, double a, double d)
 {
@@ -71,8 +64,6 @@ int main()
 
     // -----------------------------
     // 1) 重力
-    // 与你手写牛顿欧拉 d_v[0] = (0,0,9.8) 对应时，
-    // 这里更建议设为物理重力 g = (0,0,-9.8)
     // -----------------------------
     model.gravity.linear()  << 0.0, 0.0, -9.8;
     model.gravity.angular() << 0.0, 0.0,  0.0;
@@ -106,7 +97,6 @@ int main()
 
     // -----------------------------
     // 3) 动力学参数
-    // 这些必须与你手写代码完全一致
     // -----------------------------
     const std::array<Vector3d, n> pc = {
         Vector3d( 1.09999999999679e-05, -0.00799199999999364, -0.0921580000000931),
@@ -162,7 +152,7 @@ int main()
     // 4) 手工建模 6 个 RZ 关节
     // -----------------------------
     std::array<JointIndex, n> joint_ids;
-    JointIndex parent = 0; // universe
+    JointIndex parent = 0;
 
     for(int i = 0; i < n; ++i)
     {
@@ -175,7 +165,6 @@ int main()
             "joint" + std::to_string(i + 1)
         );
 
-        // 刚体惯量直接挂到该关节上
         model.appendBodyToJoint(
             joint_ids[i],
             Inertia(m[i], pc[i], I[i]),
@@ -214,22 +203,60 @@ int main()
     std::cout << "ddq = " << ddq.transpose() << "\n\n";
 
     // -----------------------------
-    // 6) RNEA
+    // 6) RNEA Benchmark
     // -----------------------------
-    // 开始计时
-    auto start = std::chrono::high_resolution_clock::now();
+    constexpr int rounds = 10;
+    constexpr int iters_per_round = 100000;
 
-    VectorXd tau = rnea(model, data, q, dq, ddq);
+    for(int i = 0; i < 1000; ++i)
+    {
+        rnea(model, data, q, dq, ddq);
+    }
 
-    // 结束计时
-    auto end = std::chrono::high_resolution_clock::now();
+    VectorXd tau(model.nv);
+    volatile double checksum = 0.0;
+    double total_avg_ns = 0.0;
+
+    std::cout << "================ RNEA Benchmark ================\n";
+    std::cout << "rounds          = " << rounds << "\n";
+    std::cout << "iters per round = " << iters_per_round << "\n\n";
+
+    for(int round = 0; round < rounds; ++round)
+    {
+        auto start = std::chrono::steady_clock::now();
+
+        for(int i = 0; i < iters_per_round; ++i)
+        {
+            tau = rnea(model, data, q, dq, ddq);
+            checksum += tau[0];
+        }
+
+        auto end = std::chrono::steady_clock::now();
+
+        auto round_total_ns =
+            std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+        double avg_ns = static_cast<double>(round_total_ns) / iters_per_round;
+        double avg_us = avg_ns / 1000.0;
+
+        total_avg_ns += avg_ns;
+
+        std::cout << "[Round " << (round + 1) << "] "
+                  << "总时间 = " << round_total_ns << " ns, "
+                  << "平均单次 = " << avg_ns << " ns ("
+                  << avg_us << " us)" << "\n";
+    }
+
+    double final_avg_ns = total_avg_ns / rounds;
+    double final_avg_us = final_avg_ns / 1000.0;
+
+    std::cout << "\n================ 最终结果 ================\n";
+    std::cout << "10轮平均单次时间: " << final_avg_ns << " ns" << std::endl;
+    std::cout << "10轮平均单次时间: " << final_avg_us << " us" << std::endl;
+    std::cout << "checksum = " << checksum << std::endl << std::endl;
 
     std::cout << "================ RNEA 输出 ================\n";
     std::cout << "tau = " << tau.transpose() << "\n\n";
-
-    // 计算耗时
-    auto duration_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
     for(int i = 0; i < n; ++i)
     {
@@ -240,11 +267,6 @@ int main()
         std::cout << "n_f = " << fi.angular().transpose() << "\n";
         std::cout << "tau = " << tau[i] << "\n\n";
     }
-
-
-    std::cout << "=========== time ===========" << std::endl;
-    std::cout << "计算时间: " << duration_ns << " ns" << std::endl;
-    std::cout << "计算时间: " << duration_us << " us" << std::endl;
 
     return 0;
 }
